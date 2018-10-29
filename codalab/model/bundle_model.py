@@ -799,6 +799,10 @@ class BundleModel(object):
                     bundle_update['info']['failure_message'],
                     connection,
                 )
+            elif state == State.WORKER_ERROR:
+                # send error email and remove bundle
+
+                return self.finalize_bundle(bundle, user_id, exitcode, failure_message, connection)
             elif state in [State.PREPARING, State.RUNNING]:
                 return self.resume_bundle(
                     bundle, bundle_update, row, user_id, worker_id, hostname, connection
@@ -898,10 +902,7 @@ class BundleModel(object):
         if failure_message == 'Kill requested':
             state = State.KILLED
 
-        metadata = {
-            'run_status': 'Finished',
-            'last_updated': int(time.time()),
-        }
+        metadata = {'run_status': 'Finished', 'last_updated': int(time.time())}
 
         with self.engine.begin() as connection:
             self.update_bundle(bundle, {'state': state, 'metadata': metadata}, connection)

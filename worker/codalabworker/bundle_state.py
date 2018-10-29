@@ -27,6 +27,8 @@ class State(object):
     FAILED = 'failed'
     # Killed by user
     KILLED = 'killed'
+    # Assigned worker ran into uncaught error
+    WORKER_ERROR = 'worker_error'
     # Assigned worker has gone offline
     WORKER_OFFLINE = 'worker_offline'
 
@@ -43,4 +45,4 @@ class State(object):
         FINALIZING,
     }
     ACTIVE_STATES = {MAKING, WAITING_FOR_WORKER_STARTUP, STARTING, RUNNING, FINALIZING, PREPARING}
-    FINAL_STATES = {READY, FAILED, KILLED}
+    FINAL_STATES = {READY, FAILED, KILLED, WORKER_ERROR}

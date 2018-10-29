@@ -4,6 +4,7 @@ from subprocess import check_output
 import threading
 import time
 import socket
+import traceback
 
 from codalabworker.worker_thread import ThreadDict
 from codalabworker.state_committer import JsonStateCommitter
@@ -156,7 +157,14 @@ class LocalRunManager(BaseRunManager):
             # transition all runs
             for bundle_uuid in self.runs.keys():
                 run_state = self.runs[bundle_uuid]
-                self.runs[bundle_uuid] = self._run_state_manager.transition(run_state)
+                try:
+                    self.runs[bundle_uuid] = self._run_state_manager.transition(run_state)
+                except Exception as e:
+                    print 'Adding error run'
+                    run_state.info['error_message'] = traceback.format_exc()
+                    self.runs[bundle_uuid] = run_state._replace(
+                        info=run_state.info, stage=LocalRunStage.ERROR
+                    )
 
             # filter out finished runs
             self.runs = {k: v for k, v in self.runs.items() if v.stage != LocalRunStage.FINISHED}

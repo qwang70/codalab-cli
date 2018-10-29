@@ -56,6 +56,12 @@ class LocalRunStage(object):
     WORKER_STATE_TO_SERVER_STATE[FINALIZING] = State.FINALIZING
 
     """
+    Error means the worker ran into an uncaught error with this run
+    """
+    ERROR = 'LOCAL_RUN.ERROR'
+    WORKER_STATE_TO_SERVER_STATE[ERROR] = State.WORKER_ERROR
+
+    """
     Finished means the worker is done with this run
     """
     FINISHED = 'LOCAL_RUN.FINISHED'
@@ -100,6 +106,7 @@ class LocalRunStateMachine(StateTransitioner):
             LocalRunStage.UPLOADING_RESULTS, self._transition_from_UPLOADING_RESULTS
         )
         self.add_transition(LocalRunStage.FINALIZING, self._transition_from_FINALIZING)
+        self.add_transition(LocalRunStage.ERROR, self._transition_from_ERROR)
         self.add_terminal(LocalRunStage.FINISHED)
 
     def _transition_from_PREPARING(self, run_state):
@@ -441,6 +448,17 @@ class LocalRunStateMachine(StateTransitioner):
         )
 
     def _transition_from_FINALIZING(self, run_state):
+        """
+        If a full worker cycle has passed since we got into FINALIZING we already reported to
+        server so can move on to FINISHED. Can also remove bundle_path now
+        """
+        if run_state.info['finalized']:
+            remove_path(run_state.bundle_path)
+            return run_state._replace(stage=LocalRunStage.FINISHED, run_status='Finished')
+        else:
+            return run_state
+
+    def _transition_from_ERROR(self, run_state):
         """
         If a full worker cycle has passed since we got into FINALIZING we already reported to
         server so can move on to FINISHED. Can also remove bundle_path now
