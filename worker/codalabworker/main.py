@@ -90,11 +90,6 @@ def main():
         '--verbose', action='store_true', help='Whether to output verbose log messages.'
     )
     parser.add_argument(
-        '--exit-when-idle',
-        action='store_true',
-        help='If specified the worker quits if it finds itself with no jobs after a checkin',
-    )
-    parser.add_argument(
         '--id',
         default='%s(%d)' % (socket.gethostname(), os.getpid()),
         help='Internal use: ID to use for the worker.',
@@ -102,10 +97,11 @@ def main():
     parser.add_argument(
         '--shared-file-system',
         action='store_true',
-        help='Internal use: Whether the file system containing '
+        help='Whether the file system containing '
         'bundle data is shared between the bundle service '
         'and the worker.',
     )
+
     args = parser.parse_args()
 
     # Get the username and password.
@@ -191,7 +187,7 @@ chmod 600 %s""" % args.password_file
         args.id,
         args.tag,
         args.work_dir,
-        args.exit_when_idle,
+        args.shared_file_system,
         bundle_service,
     )
 
