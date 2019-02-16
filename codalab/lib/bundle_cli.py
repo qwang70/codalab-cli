@@ -123,6 +123,7 @@ BUNDLE_COMMANDS = (
     'write',
     'mount',
     'netcat',
+    'ancestors',
 )
 
 WORKSHEET_COMMANDS = ('new', 'add', 'wadd', 'work', 'print', 'wedit', 'wrm', 'wls')
@@ -2195,6 +2196,45 @@ class BundleCLI(object):
         )
         info = client.netcat(bundle_uuid, port=args.port, data={"message": args.message})
         print >>self.stdout, info['data']
+
+    @Commands.command(
+        'ancestors',
+        help=[
+            'Recursively print out all of the ancestors of the bundle to stdout.'
+        ],
+        arguments=(
+            Commands.Argument('bundle_spec', help=BUNDLE_SPEC_FORMAT, nargs='+', completer=BundlesCompleter),
+            Commands.Argument(
+                '-w',
+                '--worksheet-spec',
+                help='Operate on this worksheet (%s).' % WORKSHEET_SPEC_FORMAT,
+                completer=WorksheetsCompleter,
+            ),
+        ),
+    )
+    def do_ancestors_command(self, args):
+        args.bundle_spec = spec_util.expand_specs(args.bundle_spec)
+        client, worksheet_uuid = self.parse_client_worksheet_uuid(args.worksheet_spec)
+        bundle_uuids = self.target_specs_to_bundle_uuids(client, worksheet_uuid, args.bundle_spec)
+
+        lines = []  # The output that we're accumulating
+        # create a stack with specs that needs to be recursively traversed
+        stack = [] # tuple of (bundle, level)
+        for bundle_uuid in reversed(bundle_uuids):
+            stack.append((bundle_uuid, 0))
+        # Dfs traversal
+        while len(stack) > 0: 
+            curr_bundle_uuid, curr_level = stack.pop()
+            # process current bundle
+            bundle = client.fetch('bundles', curr_bundle_uuid)
+            name = bundle['metadata']['name']
+            lines.append('%s- %s(%s)' % ('  '*curr_level, name, curr_bundle_uuid[:8]))
+            # add dependent bundles
+            if bundle['dependencies']:
+                deps = bundle['dependencies']
+                for dep in reversed(deps):
+                    stack.append((dep['parent_uuid'], curr_level+1))
+        print >>self.stdout, '\n'.join(lines)
 
     @Commands.command(
         'cat',

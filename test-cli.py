@@ -805,6 +805,19 @@ def test(ctx):
     run_command([cl, 'rm', '--force', uuid2])  # force the deletion
     run_command([cl, 'rm', '-r', uuid1])  # delete things downstream
 
+@TestModule.register('ancestors')
+def test(ctx):
+    uuidA = run_command([cl, 'upload', test_path('a.txt')])
+    uuidB = run_command([cl, 'upload', test_path('b.txt')])
+    uuidCountA = run_command([cl, 'run', 'input:' + uuidA, 'wc -l input'])
+    uuidCountB = run_command([cl, 'mimic', uuidA, uuidB])
+    wait(uuidCountA)
+    wait(uuidCountB)
+    check_contains([uuidA, 'a.txt'], run_command([cl, 'ancestor', uuidA]))
+    check_contains([uuidB, 'b.txt'], run_command([cl, 'ancestor', uuidB]))
+    check_contains([uuidCountA, uuidA, 'a.txt'], run_command([cl, 'ancestor', uuidCountA]))
+    check_contains([uuidCountB, uuidA, uuidB, 'a.txt', 'b.txt'], run_command([cl, 'ancestor', uuidCountB]))
+
 
 @TestModule.register('worksheet')
 def test(ctx):
