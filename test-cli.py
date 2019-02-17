@@ -813,10 +813,10 @@ def test(ctx):
     uuidCountB = run_command([cl, 'mimic', uuidA, uuidB])
     wait(uuidCountA)
     wait(uuidCountB)
-    check_contains([uuidA, 'a.txt'], run_command([cl, 'ancestor', uuidA]))
-    check_contains([uuidB, 'b.txt'], run_command([cl, 'ancestor', uuidB]))
-    check_contains([uuidCountA, uuidA, 'a.txt'], run_command([cl, 'ancestor', uuidCountA]))
-    check_contains([uuidCountB, uuidA, uuidB, 'a.txt', 'b.txt'], run_command([cl, 'ancestor', uuidCountB]))
+    check_contains([uuidA[:8], 'a.txt'], run_command([cl, 'ancestors', uuidA]))
+    check_contains([uuidB[:8], 'b.txt'], run_command([cl, 'ancestors', uuidB]))
+    check_contains([uuidCountA[:8], uuidA[:8], 'a.txt'], run_command([cl, 'ancestors', uuidCountA]))
+    check_contains([uuidCountB[:8], uuidB[:8], 'b.txt'], run_command([cl, 'ancestors', uuidCountB]))
 
 
 @TestModule.register('worksheet')
